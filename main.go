@@ -112,5 +112,5 @@ func main() {
 	r.HandleFunc("/delete_repo", handleDeleteRepoHelper(client)).Methods("POST")
 
 	log.Info("Starting server at %s", serverAddress)
-	log.Fatal("%v", http.ListenAndServe(serverAddress, r))
+	log.Fatal("%v", http.ListenAndServeTLS(serverAddress, "server.crt", "server.key", r))
 }
