@@ -53,6 +53,38 @@ func handleIndexHelper(client *gogs_api.Client, template_file string) func(w htt
 	}
 }
 
+func handleDeleteRepoHelper(client *gogs_api.Client) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			log.Error("%v", err)
+			return
+		}
+
+		// TODO: Make this work
+		repo := r.Form.Get("repoName")
+
+		// Fetch our `UserName`, presumably the owner of `repo`
+		user, err := client.GetSelfInfo()
+		if err != nil {
+			log.Error("%v", err)
+			return
+		}
+
+		// Delete the repository
+		err = client.DeleteRepo(user.UserName, repo)
+		if err != nil {
+			log.Error("%v", err)
+			return
+		}
+
+		log.Info("Deleted repository: %s", repo)
+
+		// Redirect back to the index
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
 // Main function
 func main() {
 	// Server configurations
@@ -77,7 +109,8 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", handleIndexHelper(client, "index.tmpl")).Methods("GET")
+	r.HandleFunc("/delete_repo", handleDeleteRepoHelper(client)).Methods("POST")
 
 	log.Info("Starting server at %s", serverAddress)
-	log.Fatal("%s", http.ListenAndServe(serverAddress, r))
+	log.Fatal("%v", http.ListenAndServe(serverAddress, r))
 }

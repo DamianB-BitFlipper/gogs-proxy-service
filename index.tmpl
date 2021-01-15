@@ -10,9 +10,15 @@
   <body>
     <p>The user is {{ .UserName }}</p>
     <h2>Repos:</h2>
-    {{ range .Repos }} 
-    <p>{{ . }}</p>
-    {{ end }}
+
+    <form action="/delete_repo" method="POST">
+      {{ range .Repos }} 
+      <div>
+        <p style="margin:0;display:inline;float:left">{{ . }}</p> 
+        <button style="margin:0;display:inline:float:right" type="submit" id="postback1" name="repoName" value="{{ . }}">Delete</button>
+      </div>
+      {{ end }}
+    </form>
   </body>
 
 </html>
