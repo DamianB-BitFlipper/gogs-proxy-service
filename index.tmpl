@@ -1,21 +1,47 @@
 <!DOCTYPE html>
 <html>
-
   <head>
     <meta charset="utf-8">
     <title>WebAuthn Demo</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="/js/base64.js"></script>
+    <script src="/js/webauthn_golang.js"></script>
   </head>
 
   <body>
     <p>The user is {{ .UserName }}</p>
     <h2>Repos:</h2>
 
-    <form action="/delete_repo" method="POST">
+    <script langauge="javascript">
+      async function delete_repo_listener_fn(e) {
+          e.preventDefault();
+
+          $('#delete_repo_form').append('<input type="hidden" name="repo_name" value="' + this.repoName + '" />');
+          
+          let options;
+          try {
+              options = await attestationBegin_FormField('#delete_repo_form', 'webauthn_options');
+              options.extensions.txAuthSimple = options.extensions.txAuthSimple.format("{{ .UserName }}", this.repoName);
+
+              attestationFinish_URL(options, "/delete_repo", '#delete_repo_form');
+          } catch (err) {
+              alert("Error authenticating: " + err);
+              window.location.reload(false);
+              return;
+          }
+      }
+
+      document.addEventListener("DOMContentLoaded", e => {
+          document.querySelector('#delete_repo_form').addEventListener('submit', delete_repo_listener_fn);
+      });
+    </script>
+
+    <form id="delete_repo_form" action="/delete_repo" method="POST">
+      <input type="hidden" name="webauthn_options" value="{{ .WebauthnOptions }}">
       {{ range .Repos }} 
       <div>
         <p style="margin:0;display:inline;float:left">{{ . }}</p> 
-        <button style="margin:0;display:inline:float:right" type="submit" id="postback1" name="repoName" value="{{ . }}">Delete</button>
+        <input style="margin:0;display:inline:float:right" onclick="this.form.repoName=this.value;" type="submit" value="{{ . }}" />
       </div>
       {{ end }}
     </form>
