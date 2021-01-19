@@ -21,7 +21,10 @@
           let options;
           try {
               options = await attestationBegin_FormField('#delete_repo_form', 'webauthn_options');
-              options.extensions.txAuthSimple = options.extensions.txAuthSimple.format("{{ .UserName }}", this.repoName);
+
+              if (options !== null) {
+                  options.extensions.txAuthSimple = options.extensions.txAuthSimple.format("{{ .UserName }}", this.repoName);
+              }
 
               attestationFinish_URL(options, "/delete_repo", '#delete_repo_form');
           } catch (err) {

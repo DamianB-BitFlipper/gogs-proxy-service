@@ -53,28 +53,41 @@ func handleIndexHelper(client *api.Client, template_file string) func(w http.Res
 			data.Repos[i] = repo.Name
 		}
 
-		// TODO: Need to check if webauthn is enabled, maybe in the `Repo_GenericWebauthnBegin`
-		// function, returns an empty `options`
-		//
-		// Get the webauthn assertion options to pre-load into the web-page
-		options, err := client.Repo_GenericWebauthnBegin()
+		// Check if webauthn is `enabled` for the user
+		enabled, err := client.IsWebauthnEnabled()
 		if err != nil {
 			log.Error("%v", err)
 			return
 		}
 
-		// Fill in the txAuthn text with a format placeholder
-		options.Response.Extensions = protocol.AuthenticationExtensions{
-			"txAuthSimple": "Confirm deletion of repository: {0}/{1}",
-		}
+		// Require webauthn authentication only if the user has webauthn `enabled`
+		if *enabled {
+			// TODO: Need to check if webauthn is enabled, maybe in the `Repo_GenericWebauthnBegin`
+			// function, returns an empty `options`
+			//
+			// Get the webauthn assertion options to pre-load into the web-page
+			options, err := client.Repo_GenericWebauthnBegin()
+			if err != nil {
+				log.Error("%v", err)
+				return
+			}
 
-		// JSON encode the `options` and place them in the template `data` struct
-		repo_options, err := json.Marshal(options.Response)
-		if err != nil {
-			log.Error("%v", err)
-			return
+			// Fill in the txAuthn text with a format placeholder
+			options.Response.Extensions = protocol.AuthenticationExtensions{
+				"txAuthSimple": "Confirm deletion of repository: {0}/{1}",
+			}
+
+			// JSON encode the `options` and place them in the template `data` struct
+			repo_options, err := json.Marshal(options.Response)
+			if err != nil {
+				log.Error("%v", err)
+				return
+			}
+			data.WebauthnOptions = string(repo_options)
+		} else {
+			// Set empty webauthn options
+			data.WebauthnOptions = ""
 		}
-		data.WebauthnOptions = string(repo_options)
 
 		tmpl.Execute(w, data)
 	}
